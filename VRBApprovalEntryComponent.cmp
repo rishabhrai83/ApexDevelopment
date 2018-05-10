@@ -1,0 +1,4 @@
+<aura:component implements="force:lightningQuickActionWithoutHeader,force:hasRecordId" >
+<aura:handler name="init" value="{!this}" action="{!c.doInit}" />	
+    <lightning:spinner variant="brand" size="large" alternativeText="Your request is in progress" title="Your request is in progress"/> 
+</aura:component>

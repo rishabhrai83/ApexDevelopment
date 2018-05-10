@@ -1,0 +1,73 @@
+<aura:component >
+    <!-- Aura Attribute for store single VRB_Approvers__c[custom Object] Instance
+         And Store Index of Particular Instance --> 
+    <aura:handler event="c:addDynamicErrorEvt" action="{!c.addError}"/>
+    <aura:attribute name="VRBApproversInstance" type="VRB_Approvers__c"  />
+    <aura:attribute name="UserDetails" type="User" />
+    <aura:attribute name="rowIndex" type="String"/>
+    <aura:attribute name="VRBApproversPicklist" type="map" />
+    <aura:attribute name="EnableApproverSection" type="map" />
+    <aura:attribute name="myError" type="Integer[]"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <!-- Register 2 Lightning Event for handle add or Delete rows on Parent Component  --> 
+    <aura:registerEvent name="AddRowEvt" type="c:AddNewApproverRow"/> 
+    <aura:registerEvent name="DeleteRowEvt" type="c:DeleteApproverRow"/> 
+    
+    <aura:attribute name="subverticalLeaderNotExist" type="Boolean" default="false"/>
+    <aura:attribute name="subverticalLeaderExist" type="Boolean" default="false"/>      
+    <aura:attribute name="accountOwnerFlag" type="Boolean" default="false"/>
+    <aura:attribute name="accountOwnerClientExecutiveFlag" type="Boolean" default="false"/>
+    <aura:attribute name="accountOwnerNotClientExecutiveFlag" type="Boolean" default="false"/>
+    <aura:attribute name="vrbPendingApprovalFlag" type="Boolean" default="false" 
+                    description="Indicate if there are no pending approvals for small deals"  />
+    <aura:attribute name="largeDealEligibility" type="Boolean" default="false"
+                    description="Indicate if deal is large" access="public"/>
+    <!-- div class="slds-scrollable" style="height: 5rem; width: 24rem;" -->
+    <!-- ui:scrollerWrapper class="scrollerSize" -->
+    <!-- div class="innerDivWrapper" -->
+    <!-- Table Row -->  
+    <tr class="col1">
+        <td class="AllCol"><div class="col2">
+            <force:inputField aura:id="accLookup" value="{!v.VRBApproversInstance.ApproverName__c}"  />
+            </div>
+        </td>
+        <aura:if isTrue="{!v.largeDealEligibility}">  
+            <td class="AllCol"><div class="slds-truncate ">
+                <ui:inputSelect aura:id="Dec" class="slds-input" value="{!v.VRBApproversInstance.Decision__c}"/>
+                </div>  
+            </td>
+        </aura:if> 
+        <td class="AllCol"><div class="slds-truncate slds-cell-wrap">
+            <abbr class="slds-required" title="required">*</abbr>
+            <ui:inputSelect aura:id="BusinessFunc" class="slds-input field" value="{!v.VRBApproversInstance.BusinessFunction__c}"/>
+            <aura:iteration items="{!v.myError}" var="item" indexVar="index">
+                <aura:if isTrue="{!v.rowIndex == item.value}">
+                    <div class="myDynamicErr">
+                        You must enter a value
+                    </div>
+                </aura:if>
+            </aura:iteration>
+            </div>  
+        </td>
+        <td class="AllCol"><div class="slds-truncate">
+            <ui:inputTextArea class="mycomments" value="{!v.VRBApproversInstance.Comments__c}" rows="2"/>
+            </div> 
+        </td>
+        <aura:if isTrue="{!v.largeDealEligibility}"> 
+            <td class="AllCol"> <div class="slds-truncate slds-m-horizontal_medium" >
+                <div class="slds-form-element ">
+                    <a onclick="{!c.AddNewRow}">
+                        <lightning:button label="Add Row" iconName="utility:add" iconPosition="left" variant="neutral" class="myButtons"/>
+                    </a>  
+                    <a onclick="{!c.removeRow}">
+                        <lightning:button label="Delete" iconName="utility:delete" iconPosition="left" variant="destructive"/>
+                    </a>  
+                </div>  
+                </div>   
+            </td> 
+        </aura:if> 
+    </tr>
+    <!-- /div -->
+    <!-- /ui:scrollerWrapper -->
+    <!-- /div -->
+</aura:component>

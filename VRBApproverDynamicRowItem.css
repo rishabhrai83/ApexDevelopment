@@ -1,0 +1,51 @@
+.THIS .col1 {
+    
+    background-color:#ebf3ff !important;
+    
+}
+.THIS.scrollerSize {
+    height: 100%;
+    width: 100%;
+    
+}
+.THIS .innerDivWrapper {
+    min-height: 101%;
+   
+}
+
+.THIS .field {
+    width:90%;
+    
+}
+
+.THIS .col2 {
+ 
+    background-color:white !important;  
+    fill: white !important;
+}
+.THIS .SrCol {
+   
+    width:5% !important;
+}
+.THIS .AllCol {
+   
+    border-right: 0.1px solid !important;
+    border-top:0.1px solid !important;
+    border-bottom:0.1px solid !important;
+    border-left:0.1px solid !important;
+    border-color:Lightgray !important;
+    
+}
+.THIS .myButtons {
+   
+    margin-right:5px !important;
+    width:50% !important;
+    white-space: nowrap;
+    
+}
+.THIS .myDynamicErr{
+   font-size: .75rem;
+    margin-top: .5rem;
+    color: rgb(194, 57, 52);
+    
+}

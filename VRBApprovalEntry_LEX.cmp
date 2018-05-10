@@ -1,0 +1,388 @@
+<aura:component controller="VRBApprovalController_LEX" Implements="flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <aura:attribute name="recordId" type="id"  />
+    <aura:attribute name="VRBApproversPicklist" type="map" default="{}" />
+    <aura:attribute name="EnableApproverSection" type="map" default="{}" />
+    <!--Init handler which is call doInit js function on component Load-->
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:attribute name="VRBDate" type="date" default="" />
+    <aura:attribute name="Oppty" type="Opportunity"  default="{ 'sobjectType': 'Opportunity'}" /> 
+    <!--Event handler for Add and Delete Row Event which is fire from Child Component-->    
+    <aura:handler name="DeleteRowEvt" event="c:DeleteApproverRow" action="{!c.removeDeletedRow}"/>
+    <aura:handler name="AddRowEvt" event="c:AddNewApproverRow" action="{!c.addNewRow}"/>
+    <aura:handler name="change" value="{!v.VRBDate}" action="{!c.VRBDateChanged}"/>
+    <aura:registerEvent name="addDynamicErrorEvt" type="c:addDynamicErrorEvt"/>
+    <!--Aura Attribute for store VRB Approver Object List as Array-->   
+    <aura:attribute name="VRBApproverList" type="VRB_Approvers__c[]"/> 
+    <aura:attribute name="VRBApprovers" type="VRB_Approvers__c" default="{ 'sobjectType': 'VRB_Approvers__c'}"/>
+    <aura:attribute name="VRBPendingApprovals" type="VRB_Approvals__c" default="{ 'sobjectType': 'VRB_Approvals__c'}"/>
+    <aura:attribute name="VRBApproval" type="VRB_Approvals__c" default="{ 'sobjectType': 'VRB_Approvals__c'}" /> 
+    <aura:attribute name="UserDetails" type="User" default="{ 'sobjectType': 'User'}" /> 
+    <aura:attribute name="ApproverName" type="string" default="" />
+    <aura:attribute name="hasErrors" type="Boolean" default="false"
+                    description="Indicate if there were failures when validating the VRB Request." />
+    <aura:attribute name="vrbPendingApprovalFlag" type="Boolean" default="false" 
+                    description="Indicate if there are no pending approvals for small deals" access="public" />
+    <aura:attribute name="vrbPendingApprovalLargeDeal" type="Boolean" default="false"
+                    description="Indicate if there are pending approvals for large deals" />
+    <aura:attribute name="vrbApprovalNotRequired" type="Boolean" default="false"
+                    description="Indicate if VRB approval is required or not" />
+    <aura:attribute name="largeDealEligibility" type="Boolean" default="false"
+                    description="Indicate if deal is large" access="public"/>
+    <aura:attribute name="vrbPermissionSetAccess" type="Boolean" default="false"
+                    description="Indicates if user has permission to request VRB"/>
+    <aura:attribute name="usdTCVAmountLowerRange" type="Boolean" default="false"
+                    description="Indicates if deal is in lower range"/>
+    <aura:attribute name="usdTCVAmountHigherRange" type="Boolean" default="false"
+                    description="Indicates if deal is in higher range"/>
+    <aura:attribute name="subverticalLeaderNotExist" type="Boolean" default="false"/>
+    <aura:attribute name="subverticalLeaderExist" type="Boolean" default="false"/>      
+    <aura:attribute name="accountOwnerFlag" type="Boolean" default="false"/>
+    <aura:attribute name="accountOwnerClientExecutiveFlag" type="Boolean" default="false"/>
+    <aura:attribute name="accountOwnerNotClientExecutiveFlag" type="Boolean" default="false"/>
+    <aura:attribute name="disableSubmitButton" type="Boolean" default="false"/>
+    <aura:attribute name="enableAddApprover" type="Boolean" default="false"/>
+    <aura:attribute name="enableSmallDealSection" type="Boolean" default="false"/>
+    <aura:attribute name="setFlags" type="Boolean" default="false"/>
+    <aura:attribute name="IsLoading" type="Boolean" default="false"/>
+    <aura:attribute name="test" type="VRB_Approvers__c" default="{ 'sobjectType': 'VRB_Approvers__c'}"/>
+    <aura:attribute name="approvalMsg" type="string"  />
+    <aura:attribute name="SmallDeal" type="string"  />
+    <aura:attribute name="errormsg" type="list" default="{}" />
+    <aura:attribute name="ErrorMessage" type="string"  />
+    <aura:attribute name="ParentTab" type="string" default=""/>
+    <lightning:workspaceAPI aura:id="workspace" />
+    <ui:scrollerWrapper class="scrollerSize">
+        <div class="innerDivWrapper" >
+            <!--Header Part-->  
+            <div class="slds-form">
+                <aura:if isTrue="{!v.vrbApprovalNotRequired}">
+                    <div class="slds-box slds-theme_error slds-theme_alert-texture">
+                        <div class="slds-align_absolute-center">
+                            <div class="slds-media">
+                                <div class="slds-media__figure">
+                                    <lightning:icon iconName="utility:error" variant="inverse" size="x-small"/>
+                                </div>
+                                <div class="slds-media__body">
+                                    <p class="slds-text-body_small slds-line-height_reset slds-text-align_left">{!v.SmallDeal}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>     
+                    </div>
+                </aura:if>
+            </div>    
+            <aura:if isTrue="{!!v.vrbApprovalNotRequired}">  
+                <div class="slds-page-header">
+                    <div class="slds-media">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="standard:opportunity" alternativeText="Opportunity"/>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-text-body_small slds-line-height_reset">VRB APPROVAL REQUEST</p>
+                            <h1 class="slds-page-header__title slds-truncate slds-align-middle" title="New VRB Approval">New VRB Approval</h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-form slds-form_horizontal">
+                    <h2 class="mainTitle slds-text-align_left">VRB Approval Request Form</h2>
+                    <aura:if isTrue="{!v.hasErrors}">
+                        <div class="slds-box slds-theme_error slds-theme_alert-texture">
+                            <div class="slds-align_absolute-center">
+                                <div class="slds-media">
+                                    <div class="slds-media__figure">
+                                        <lightning:icon iconName="utility:error" variant="inverse" size="x-small"/>
+                                    </div>
+                                    <div class="slds-media__body">
+                                        <p class="slds-text-body_small slds-line-height_reset slds-text-align_left">
+                                            <aura:iteration items="{!v.errormsg}" var="error">
+                                                <li>  {!error}</li>
+                                            </aura:iteration>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>     
+                        </div>
+                    </aura:if>
+                    <br></br>
+                    <div class="slds-box slds-box_x-small slds-theme_info slds-theme_alert-texture">
+                        <div class="slds-align_absolute-center">
+                            <div class="slds-media">
+                                <div class="slds-media__figure">
+                                    <lightning:icon iconName="utility:info" variant="inverse" size="x-small"/>
+                                </div>
+                                <div class="slds-media__body">
+                                    <p class="slds-text-body_small slds-line-height_reset slds-text-align_left">{!v.approvalMsg}</p>
+                                </div>
+                            </div>
+                        </div>     
+                    </div>  
+                    <aura:if isTrue="{!v.IsLoading}">
+                        <lightning:spinner variant="brand" size="large" alternativeText="Your request is in progress"/>
+                    </aura:if>
+                    <aura:if isTrue="{!!v.vrbPendingApprovalLargeDeal}">   
+                        <lightning:recordViewForm recordId="{!v.recordId}" objectApiName="Opportunity">
+                            <lightning:layout horizontalAlign="space">
+                                <lightning:layoutItem padding="around-small" size="6">
+                                    <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                        <label class="slds-form-element__label" for="Name">Opportunity Name</label>
+                                        <div class="slds-form-element__control" style="min-height: 18px;">
+                                            <ui:outputURL class="slds-output " value="{!'/'+v.recordId}"  label="{!v.Oppty.Name}" />
+                                        </div>
+                                    </div>
+                                    <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                        <label class="slds-form-element__label" for="OwnerId">Opportunity Owner Name</label>
+                                        <div class="slds-form-element__control" style="min-height: 18px;">
+                                            <ui:outputURL class="slds-output " value="{!'/'+v.Oppty.OwnerId}" label="{!v.Oppty.Owner.Name}" />
+                                        </div>
+                                    </div>
+                                    <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                        <label class="slds-form-element__label" for="FormattedCurrency">TCV (USD)</label>
+                                        <div class="slds-form-element__control" style="min-height: 18px;">
+                                            <lightning:formattedNumber value="{!v.Oppty.FormattedCurrency__c}"  class="slds-output" style="currency"/>
+                                        </div>
+                                    </div>
+                                </lightning:layoutItem>
+                                <lightning:layoutItem flexibility="no-flex" padding="around-small"  size="6"> 
+                                    <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                        <label class="slds-form-element__label" for="AccountId">Account Name</label>
+                                        <div class="slds-form-element__control" style="min-height: 18px;">
+                                            <ui:outputURL class="slds-output " value="{!'/'+v.Oppty.AccountId}" label="{!v.Oppty.Account.Name}" />
+                                        </div>
+                                    </div>
+                                    <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                        <label class="slds-form-element__label" for="Type">Opportunity Type</label>
+                                        <div class="slds-form-element__control" style="min-height: 18px;">
+                                            <ui:outputText class="slds-output" value="{!v.Oppty.Type}" />
+                                        </div>  
+                                    </div>
+                                    
+                                    <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                        <label class="slds-form-element__label" for="FormattedMargin">Opportunity Margin%</label>
+                                        <div class="slds-form-element__control" style="min-height: 18px;">
+                                            <ui:outputNumber class="slds-output" value="{!v.Oppty.FormattedMarginPercent__c}" format=".00" />
+                                        </div>   
+                                    </div>
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                            <br></br>
+                            <aura:if isTrue="{!and(v.largeDealEligibility,!v.vrbPendingApprovalLargeDeal)}"> 
+                                <lightning:recordEditForm objectApiName='VRB_Approvals__c'>
+                                    <lightning:layout horizontalAlign="space">
+                                        <lightning:layoutItem padding="around-small" size="6">
+                                            <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv">
+                                                <label class="slds-form-element__label" for="VRBLevel">VRB Level<abbr class="slds-required" title="required">*</abbr></label>
+                                                <div class="slds-form-element__control">
+                                                    <ui:inputSelect aura:id="VRBLevel"  requiredIndicatorClass="slds-required" required="true" class="slds-select dynamic" value="{!v.VRBApproval.VRBLevel__c}"/> 
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv">
+                                                <label class="slds-form-element__label" for="VRBGate">VRB Gate<abbr class="slds-required" title="required">*</abbr></label>
+                                                <div class="slds-form-element__control">
+                                                    <ui:inputSelect aura:id="VRBGate" requiredIndicatorClass="slds-required" required="true" class="slds-select dynamic" value="{!v.VRBApproval.VRBGate__c}" /> 
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                                <label class="slds-form-element__label" for="VRBDetails">VRB Details <lightning:helptext content="Details about the VRB Approval / Meeting"/></label>                                                                                                
+                                                <div class="slds-form-element__control">
+                                                    <ui:inputTextArea aura:id="VRBDetails" class="Myfield" change="{!c.onChange}"/>
+                                                </div>
+                                            </div>
+                                        </lightning:layoutItem>
+                                        <lightning:layoutItem flexibility="no-flex"  padding="around-small" size="6">
+                                            <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                                <label class="slds-form-element__label" for="VRBDate">VRB Date <lightning:helptext content="Date VRB was held"/></label>
+                                                <div class="slds-form-element__control">
+                                                    <ui:inputDate aura:id="inputVRBDate" class="MyDatefield" value="{!v.VRBDate}" change="{!c.onDateChange}" displayDatePicker="true"/>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                                <label class="slds-form-element__label" for="checkbox"> VRB Approval Exclusion </label>
+                                                <lightning:input label="VRB Approval Exclusion" type="checkbox" aura:id="checkbox" onchange="{!c.onCheck}" class="myCheckbox" variant="label-hidden"/>
+                                            </div>
+                                        </lightning:layoutItem>
+                                    </lightning:layout>
+                                </lightning:recordEditForm>
+                            </aura:if>
+                            <aura:if isTrue="{!v.enableSmallDealSection}">
+                                <lightning:layout horizontalAlign="space">
+                                    <lightning:layoutItem flexibility="no-flex" padding="around-small" size="6">
+                                        <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                            <label class="slds-form-element__label" for="VRBLevel"> VRB Level</label>
+                                            <ui:outputText value="{!v.VRBApproval.VRBLevel__c}" class="myoutputfield" />
+                                        </div>
+                                    </lightning:layoutItem>
+                                    <lightning:layoutItem flexibility="no-flex" padding="around-small"  size="6">           
+                                        <div class="slds-form-element slds-hint-parent  slds-p-around--x-small hasDiv slds-form--inline">
+                                            <label class="slds-form-element__label" for="VRBGate"> VRB Gate</label>
+                                            <ui:outputText value="{!v.VRBApproval.VRBGate__c}" class="myoutputfield" />
+                                        </div>
+                                    </lightning:layoutItem>
+                                </lightning:layout>
+                            </aura:if>
+                        </lightning:recordViewForm>
+                    </aura:if>
+                    <aura:if isTrue="{!v.disableSubmitButton}">  
+                        <div class="slds-box slds-box_x-small slds-theme_error slds-theme_alert-texture">
+                            <div class="slds-align_absolute-center">
+                                <div class="slds-media">
+                                    <div class="slds-media__figure">
+                                        <lightning:icon iconName="utility:error" variant="inverse" size="x-small"/>
+                                    </div>
+                                    <div class="slds-media__body">
+                                        <p class="slds-text-body_small slds-line-height_reset slds-text-align_left">{!v.ErrorMessage}</p>
+                                    </div>
+                                </div>
+                            </div>     
+                        </div>
+                    </aura:if>
+                    <aura:if isTrue="{!v.enableAddApprover}">
+                        <br></br> 
+                        <table class="slds-table slds-table_bordered slds-table_fixed-layout slds-table_cell-buffer slds-no-row-hover"> 
+                            <thead>
+                                <tr class="slds-text-title_caps">
+                                    <th scope="col">
+                                        <div class="slds-truncate" title="VRB Approval">VRB Approval</div>
+                                    </th>
+                                    <th scope="col">
+                                        <div class="slds-truncate" title="VRB Gate">VRB Gate</div>
+                                    </th>
+                                    <th scope="col">
+                                        <div class="slds-truncate" title="VRB Level">VRB Level</div>
+                                    </th>
+                                    <th scope="col">
+                                        <div class="slds-truncate" title="Final Decision">Final Decision</div>
+                                    </th>
+                                </tr>
+                            </thead> 
+                            <tbody >
+                                <tr class="col1 colborder">
+                                    <td class="AllCol"><div class="slds-truncate">
+                                        <ui:outputText value="{!v.VRBPendingApprovals.Name}"/>
+                                        </div>  
+                                    </td>
+                                    <td class="AllCol"><div class="slds-truncate slds-cell-wrap">
+                                        <ui:outputText value="{!v.VRBPendingApprovals.VRBGate__c}"/>
+                                        </div>  
+                                    </td>
+                                    <td class="AllCol"><div class="slds-truncate ">
+                                        <ui:outputText value="{!v.VRBPendingApprovals.VRBLevel__c}"/>
+                                        </div> 
+                                    </td>
+                                    <td class="AllCol"><div class="slds-truncate">
+                                        <ui:outputText value="{!v.VRBPendingApprovals.FinalDecision__c}"/>
+                                        </div> 
+                                    </td>
+                                </tr>       
+                            </tbody>
+                        </table>
+                    </aura:if>
+                    <aura:if isTrue="{!v.enableAddApprover}">  
+                        <br></br> 
+                        <div class="slds-box slds-box_x-small slds-theme_info slds-theme_alert-texture">
+                            <div class="slds-align_absolute-center">
+                                <div class="slds-media">
+                                    <div class="slds-media__figure">
+                                        <lightning:icon iconName="utility:info" variant="inverse" size="x-small"/>
+                                    </div>
+                                    <div class="slds-media__body">
+                                        <p class="slds-text-body_small slds-line-height_reset slds-text-align_left">{!$Label.c.VRBAddApproverMessage}</p>
+                                    </div>
+                                </div>
+                            </div>     
+                        </div>
+                    </aura:if>
+                    <br></br>        
+                    <!--Table Part-->           
+                    <table class="slds-table slds-table_fixed-layout slds-table_bordered slds-table_cell-buffer slds-no-row-hover"> 
+                        <thead>
+                            <tr class="slds-text-title_caps">
+                                <th scope="col">
+                                    <div class="slds-truncate" title="APPROVER NAME">APPROVER NAME</div>
+                                </th>
+                                <aura:if isTrue="{!or(v.largeDealEligibility,v.accountOwnerFlag)}">
+                                    <th scope="col">
+                                        <div class="slds-truncate" title="DECISION">DECISION</div>
+                                    </th>
+                                </aura:if>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="BUSINESS FUNCTION">BUSINESS FUNCTION</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="COMMENTS">COMMENTS</div>
+                                </th>
+                                <aura:if isTrue="{!v.largeDealEligibility}">
+                                    <th scope="col">
+                                        <div class="slds-truncate" title="ACTION">ACTION</div>
+                                    </th>
+                                </aura:if>
+                            </tr>
+                        </thead> 
+                        <tbody >
+                            <!--Iterate the child Component for display Table rows with pass the List Item Index for track the Every child Component 
+                  and pass each List VRB Approver Instance -->    
+                            <aura:if isTrue="{!or(or(v.accountOwnerNotClientExecutiveFlag, v.subverticalLeaderNotExist),v.largeDealEligibility)}">
+                                <aura:iteration items="{!v.VRBApproverList}" var="item" indexVar="index">
+                                    <c:VRBApproverDynamicRowItem VRBApproversInstance="{!item}" rowIndex="{!index}" VRBApproversPicklist="{!v.VRBApproversPicklist}" EnableApproverSection="{!v.EnableApproverSection}" />
+                                </aura:iteration>
+                            </aura:if>
+                            <aura:if isTrue="{!and(v.accountOwnerFlag, !v.vrbPendingApprovalFlag)}">
+                                <tr class="col1">
+                                    <td class="AllCol"><div class="slds-truncate">
+                                        <!--ui:outputText aura:id="accLookup" value="{!v.VRBApprovers.ApproverName__c}" /-->
+                                        <ui:outputText aura:id="accLookup" value="{!v.ApproverName}" />
+                                        </div>  
+                                    </td>
+                                    <td class="AllCol"><div class="slds-truncate col3">
+                                        <ui:outputText aura:id="Dec" class="slds-output" value="{!v.VRBApprovers.Decision__c}"/>
+                                        </div>  
+                                    </td>
+                                    <td class="AllCol"><div class="slds-truncate col3 slds-cell-wrap">
+                                        <ui:outputText aura:id="BusinessFunc" class="slds-output field" value="{!v.VRBApprovers.BusinessFunction__c}"/>
+                                        </div>  
+                                    </td>
+                                    <td class="AllCol"><div class="slds-truncate col4">
+                                        <ui:inputTextArea class="slds-input" value="{!v.VRBApprovers.Comments__c}"/>
+                                        </div> 
+                                    </td>
+                                </tr>
+                            </aura:if>   
+                            <aura:if isTrue="{!or(v.accountOwnerClientExecutiveFlag, v.subverticalLeaderExist)}">
+                                <tr class="col1">
+                                    <td class="AllCol"><div class="slds-truncate">
+                                        <!--ui:outputText aura:id="accLookup" value="{!v.VRBApprovers.ApproverName__c}" /-->
+                                        <ui:outputText aura:id="accLookup" value="{!v.ApproverName}" />
+                                        </div>  
+                                    </td>
+                                    <td class="AllCol"><div class="slds-truncate col3 slds-cell-wrap">
+                                        <ui:outputText aura:id="BusinessFunc" class="slds-output field" value="{!v.VRBApprovers.BusinessFunction__c}"/>
+                                        </div>  
+                                    </td>
+                                    <td class="AllCol"><div class="slds-truncate col4">
+                                        <ui:inputTextArea class="slds-input" value="{!v.VRBApprovers.Comments__c}"/>
+                                        </div> 
+                                    </td>
+                                </tr>
+                            </aura:if>     
+                        </tbody>
+                    </table>
+                    <br/>
+                    <div class="slds-form-element">
+                        <div class="slds-align_absolute-center">
+                            <ui:button label="Cancel" press="{!c.handleCancel}"
+                                       class="slds-button slds-button--neutral" />
+                            <aura:if isTrue="{!v.enableAddApprover}">
+                                <ui:button label="Add Approver(s)" press="{!c.saveAddApprover}"
+                                           class="slds-button slds-button--neutral" />
+                            </aura:if>
+                            <aura:if isTrue="{!!v.vrbPendingApprovalLargeDeal}">
+                                <ui:button label="Submit" press="{!c.Save}"
+                                           class="slds-button slds-button--neutral" disabled="{!v.disableSubmitButton}"/>
+                            </aura:if>
+                        </div>
+                    </div>
+                </div>  
+            </aura:if>
+            <footer class="slds-p-around--large"/>
+        </div>
+    </ui:scrollerWrapper>
+</aura:component>

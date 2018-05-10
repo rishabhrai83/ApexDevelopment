@@ -1,0 +1,3 @@
+<aura:event type="APPLICATION" description="To add error at the specific row ">
+ <aura:attribute name="indexVar" type="Integer[]" description="Use For dynamically adding error msg" />
+</aura:event>

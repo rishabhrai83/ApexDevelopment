@@ -1,0 +1,113 @@
+.THIS{
+    background-color: white;
+}
+.THIS.scrollerSize {
+    height: 100%;
+    width: 100%;
+    
+}
+
+.THIS .innerDivWrapper {
+    min-height: 101%;
+   
+}
+.THIS .myCheckbox{
+  display: inline-block;
+  float: left;
+  white-space: nowrap !important;
+}
+.THIS .field{
+  width:50%;
+    height:50px;
+  
+}
+.THIS .myFormatNumber{
+    display: inline-block;
+    float: left;
+    padding-top: .25rem;
+    padding-bottom: .25rem;
+    margin-left: 25px;
+    min-height: calc(1.875rem + 2px);
+    font-size: .875rem;
+    font-weight: 400;
+    color: rgb(43, 40, 38);
+}
+
+.THIS .dynamic {
+    width: 50%;
+    height:20px !important;
+ 
+}
+.THIS .MyDatefield {
+    width: 50% !important;
+ 
+}
+.THIS .Myfield {
+    
+    white-space: nowrap; 
+ 
+}
+.THIS .MyDatefield1{
+    white-space: nowrap;
+    float:left;
+    margin-left:18%;
+}
+.THIS .datePicker-openIcon{
+    left: 45% !important;
+    
+}
+.THIS .myoutputfield {
+    float: left;
+    margin-left:10px;
+}
+.THIS .sectiontitles{
+    font-family: "Salesforce Sans",Arial,sans-serif;
+    font-size: 100%;
+    line-height: 1.75;
+    background: rgb(243, 242, 242);
+    padding: 5px 35px 5px 5px;
+    color: #3e3e3c;
+    margin-left:5px;
+    -webkit-tap-highlight-color: transparent;
+}
+.THIS .mainTitle{
+    margin: 1;
+    display: block;
+    font-weight: bold;
+    font-size: 1rem;
+    line-height: 1.25;
+    padding: 15px 10px 10px 5px;
+        
+}
+
+.THIS .slds-spinner {
+    position: fixed;
+}
+
+.THIS .col1 {
+    background-color:#ebf3ff !important;
+}
+.THIS .AllCol {
+   
+    border-right: 0.1px solid !important;
+    border-top:0.1px solid !important;
+    border-bottom:0.1px solid !important;
+    border-left:0.1px solid !important;
+    border-color:Lightgray !important;
+}
+.THIS .OpptyName
+{
+color: rgb(0, 112, 210);
+    margin-left: 20px;
+    display: inline-block;
+    
+    min-height: calc(1.875rem + 2px);
+    font-size: .875rem;
+    font-weight: 400;
+}
+.THIS .OpptyField
+{ margin-left: 20px;
+}
+.THIS .OpptyType
+{ margin-left: 8px;
+}
